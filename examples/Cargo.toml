@@ -1,0 +1,21 @@
+[package]
+name = "logstash-tracing-examples"
+version = "0.0.0"
+authors = ["Henrik Gustafsson <gsson@fnord.se>"]
+license = "MIT"
+edition = "2018"
+publish = false
+
+[dependencies]
+hyper = { version = "0.14", features = [ "full" ] }
+tokio = { version = "1", features = [ "full" ] }
+tracing = "0.1"
+tracing-attributes = "0.1"
+tracing-core = "0.1"
+tracing-futures = "0.2"
+tracing-logstash = { path = "../tracing-logstash" }
+tracing-appender = "0.1"
+tracing-subscriber = { version = "0.2", default-features = false, features = [ "env-filter" ] }
+
+tracing-log = {version = "0.1", features = ["log-tracer"] }
+log = "0.4"
