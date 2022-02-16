@@ -3,13 +3,13 @@ name = "tracing-logstash"
 version = "0.1.0"
 authors = ["Henrik Gustafsson <gsson@fnord.se>"]
 license = "MIT"
-edition = "2018"
+edition = "2021"
 description = "Minimal library to output logstash formatted events"
 homepage = "https://github.com/gsson/tracing-logstash"
 readme = "../README.md"
 keywords = ["logging", "tracing", "logstash"]
 
 [dependencies]
-tracing-core = { version = "0.1", default-features = false }
-tracing-subscriber = { version = "0.2", default-features = false, features = ["fmt"] }
+tracing-core = { version = "^0.1", default-features = false }
+tracing-subscriber = { version = "^0.3", default-features = false, features = ["fmt"] }
 serde_json = "1"

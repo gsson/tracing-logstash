@@ -63,12 +63,15 @@ impl LogState {
     }
 }
 
-pub struct Logger<W: MakeWriter> {
+pub struct Logger<W> {
     state: LogState,
     make_writer: W,
 }
 
-impl<W: MakeWriter> Logger<W> {
+impl<W> Logger<W>
+where
+    W: for<'writer> MakeWriter<'writer> + 'static,
+{
     pub fn new(make_writer: W, field_routes: FieldRouter) -> Self {
         Self {
             state: LogState::new(Arc::new(field_routes)),
@@ -106,11 +109,12 @@ const fn level_value(level: &Level) -> u64 {
     }
 }
 
-impl<W: MakeWriter + 'static, S> Layer<S> for Logger<W>
+impl<W, S> Layer<S> for Logger<W>
 where
     S: Subscriber + for<'a> LookupSpan<'a>,
+    W: for<'writer> MakeWriter<'writer> + 'static,
 {
-    fn new_span(&self, attrs: &Attributes<'_>, id: &Id, ctx: Context<'_, S>) {
+    fn on_new_span(&self, attrs: &Attributes<'_>, id: &Id, ctx: Context<'_, S>) {
         let span = ctx.span(id).expect("Span not found, this is a bug");
 
         let mut extensions = span.extensions_mut();
@@ -141,13 +145,19 @@ where
         let metadata = event.metadata();
         let mut state = self.state.clone();
 
-        for scope in ctx.scope() {
-            if let Some(span_state) = scope.extensions().get::<LogState>() {
-                state.merge(span_state);
+        if let Some(scope) = ctx.event_scope(event) {
+            for span in scope {
+                if let Some(span_state) = span.extensions().get::<LogState>() {
+                    state.merge(span_state);
+                }
             }
         }
 
-        let logger_name = str_iter_join(&mut ctx.scope().map(|span| span.name()), ":");
+        let logger_name = if let Some(scope) = ctx.event_scope(event) {
+            str_iter_join(&mut scope.map(|span| span.name()), ":")
+        } else {
+            String::new()
+        };
 
         state.insert_base(LOGGER_NAME.into(), logger_name);
         let level = metadata.level();
@@ -225,9 +235,9 @@ impl Default for FieldRouter {
     }
 }
 
-pub fn init<T: MakeWriter + 'static + Send + Sync>(
-    writer: T,
-    field_routes: FieldRouter,
-) -> Logger<T> {
+pub fn init<W>(writer: W, field_routes: FieldRouter) -> Logger<W>
+where
+    W: for<'writer> MakeWriter<'writer> + 'static,
+{
     Logger::new(writer, field_routes)
 }
