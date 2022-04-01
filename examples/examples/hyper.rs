@@ -4,10 +4,9 @@ use log::info as log_info;
 use std::convert::Infallible;
 use std::net::SocketAddr;
 use tracing::{debug, error, info, span, warn};
-use tracing_attributes::instrument;
-use tracing_core::dispatcher::Dispatch;
-use tracing_logstash::{FieldAction, FieldRouter};
-use tracing_subscriber::Layer;
+use tracing::instrument;
+use tracing_subscriber::EnvFilter;
+use tracing_subscriber::prelude::*;
 use tracing_subscriber::Registry;
 
 #[instrument]
@@ -25,23 +24,18 @@ async fn shutdown_signal() {
 
 #[tokio::main]
 async fn main() {
-    tracing_log::LogTracer::init().expect("Failed to initialise LogTracer");
-    let (appender, _guard) = tracing_appender::non_blocking(std::io::stderr());
+    let logger = tracing_logstash::Layer::default();
 
-    let filter = tracing_subscriber::filter::EnvFilter::try_from_default_env().ok();
+    let env_filter = EnvFilter::try_from_default_env()
+        .or_else(|_| EnvFilter::try_new("info"))
+        .unwrap();
 
-    let mut field_routes = FieldRouter::default();
-    field_routes.add_tag("some_tag", "some_tag", FieldAction::Value);
+    let collector = Registry::default()
+        .with(logger)
+        .with(env_filter);
 
-    let logger = tracing_logstash::init(appender, field_routes);
-    let subscriber = logger.with_subscriber(Registry::default());
-    let dispatch = if let Some(filter) = filter {
-        Dispatch::new(filter.with_subscriber(subscriber))
-    } else {
-        Dispatch::new(subscriber)
-    };
-    tracing_core::dispatcher::set_global_default(dispatch)
-        .expect("Unable to install global subscriber");
+    tracing::subscriber::set_global_default(collector)
+        .unwrap();
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
