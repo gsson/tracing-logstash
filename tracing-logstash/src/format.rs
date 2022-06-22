@@ -83,7 +83,7 @@ pub(crate) fn write_extension_fields<S: SerializeMap, R: TryForEachField>(
     recorded: &R,
 ) -> Result<(), S::Error> {
     recorded.try_for_each(|name, value| {
-        if seen.insert(name) {
+        if !value.is_unset() && seen.insert(name) {
             serialize_map.serialize_entry(name, value)?;
         }
         Ok(())

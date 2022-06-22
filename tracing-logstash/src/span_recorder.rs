@@ -48,7 +48,7 @@ impl DefaultSpanRecorder {
         let n = config.span_field_index.len();
         Self {
             config,
-            fields: vec![RecordedValue::None; n],
+            fields: vec![RecordedValue::Unset; n],
         }
     }
 }

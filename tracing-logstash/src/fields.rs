@@ -161,6 +161,7 @@ impl<'a, R: FieldRecorder> Visit for FieldVisitor<'a, R> {
 
 #[derive(Clone, Debug)]
 pub enum RecordedValue {
+    Unset,
     None,
     F64(f64),
     I64(i64),
@@ -169,13 +170,19 @@ pub enum RecordedValue {
     String(String),
 }
 
+impl RecordedValue {
+    pub fn is_unset(&self) -> bool {
+        matches!(self, RecordedValue::Unset)
+    }
+}
+
 impl Serialize for RecordedValue {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         match self {
-            RecordedValue::None => serializer.serialize_none(),
+            RecordedValue::None | RecordedValue::Unset => serializer.serialize_none(),
             RecordedValue::F64(v) => serializer.serialize_f64(*v),
             RecordedValue::I64(v) => serializer.serialize_i64(*v),
             RecordedValue::U64(v) => serializer.serialize_u64(*v),
