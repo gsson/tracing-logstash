@@ -4,7 +4,7 @@ use crate::fields::{
 use crate::format::{
     DefaultSpanFormat, FormatEvent, FormatSpan, SerializableSpanList, write_extension_fields,
 };
-use crate::DisplayLevelFilter;
+use crate::{DisplayLevelFilter, LoggerName};
 use serde::ser::{Error, SerializeMap};
 use serde::{Serialize, Serializer};
 use std::collections::HashSet;
@@ -19,7 +19,7 @@ use crate::span_recorder::DefaultSpanRecorder;
 pub struct LogstashFormat<SF = DefaultSpanFormat> {
     display_version: bool,
     display_timestamp: bool,
-    display_logger_name: bool,
+    display_logger_name: Option<LoggerName>,
     display_thread_name: bool,
     display_level: bool,
     display_level_value: bool,
@@ -52,7 +52,7 @@ impl<SF> LogstashFormat<SF> {
             ..self
         }
     }
-    pub fn with_logger_name(self, display_logger_name: bool) -> Self {
+    pub fn with_logger_name(self, display_logger_name: Option<LoggerName>) -> Self {
         Self {
             display_logger_name,
             ..self
@@ -115,7 +115,7 @@ impl Default for LogstashFormat {
         Self {
             display_version: true,
             display_timestamp: true,
-            display_logger_name: true,
+            display_logger_name: Some(LoggerName::Event),
             display_thread_name: true,
             display_level: true,
             display_level_value: true,
@@ -175,6 +175,20 @@ const RESERVED_NAMES: [&str; 8] = [
     "spans",
 ];
 
+struct SerializeSpanName<'c, SS>(&'c Event<'c>, &'c Context<'c, SS>);
+
+impl<'c, SS> Serialize for SerializeSpanName<'c, SS> where SS: Subscriber + for<'a> LookupSpan<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        if let Some(span_metadata) = self.1.current_span().metadata() {
+            let name = format!("{}::{}", span_metadata.target(), span_metadata.name());
+            serializer.serialize_str(&name)
+        }
+        else {
+            serializer.serialize_str(self.0.metadata().target())
+        }
+    }
+}
+
 impl<FS> FormatEvent for LogstashFormat<FS>
 where
     FS: FormatSpan,
@@ -210,8 +224,11 @@ where
             }
         }
 
-        if self.display_logger_name {
-            s.serialize_entry("logger_name", event_metadata.target())?;
+        if let Some(l) = self.display_logger_name {
+            match l {
+                LoggerName::Event => s.serialize_entry("logger_name", event_metadata.target())?,
+                LoggerName::Span => s.serialize_entry("logger_name", &SerializeSpanName(event, &ctx))?
+            };
         }
 
         if self.display_level {

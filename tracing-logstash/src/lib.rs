@@ -112,6 +112,13 @@ where
     }
 }
 
+
+#[derive(Copy, Clone)]
+pub enum LoggerName {
+    Event,
+    Span
+}
+
 #[derive(Copy, Clone)]
 pub enum DisplayLevelFilter {
     Off,
