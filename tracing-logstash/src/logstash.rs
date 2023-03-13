@@ -24,7 +24,7 @@ pub struct LogstashFormat<SF = DefaultSpanFormat> {
     display_level: bool,
     display_level_value: bool,
     display_span_list: Option<DisplayLevelFilter>,
-    display_stack_trace: Option<DisplayLevelFilter>,
+    display_stack_trace: Option<(DisplayLevelFilter, DisplayLevelFilter)>,
     span_format: SF,
     span_fields: Arc<FieldConfig>,
 }
@@ -82,7 +82,7 @@ impl<SF> LogstashFormat<SF> {
             ..self
         }
     }
-    pub fn with_stack_trace(self, display_stack_trace: Option<DisplayLevelFilter>) -> Self {
+    pub fn with_stack_trace(self, display_stack_trace: Option<(DisplayLevelFilter, DisplayLevelFilter)>) -> Self {
         Self {
             display_stack_trace,
             ..self
@@ -130,8 +130,9 @@ impl Default for LogstashFormat {
 fn format_stack_trace<SS>(
     event: &Event<'_>,
     ctx: &Context<'_, SS>,
-    filter: DisplayLevelFilter,
-) -> String
+    event_filter: DisplayLevelFilter,
+    span_filter: DisplayLevelFilter,
+) -> Option<String>
 where
     SS: Subscriber + for<'a> LookupSpan<'a>,
 {
@@ -145,23 +146,27 @@ where
         )
         .unwrap();
     }
+    let event_metadata = event.metadata();
+    if !event_filter.is_enabled(event, event_metadata.level()) {
+        return None
+    }
+
     let mut stack_trace = String::new();
     if let Some(scope) = ctx.event_scope(event) {
         for span in scope.from_root() {
             let span_metadata = span.metadata();
-            if filter.is_enabled(event, span_metadata.level()) {
+            if span_filter.is_enabled(event, span_metadata.level()) {
                 append_line(&mut stack_trace, span_metadata);
             }
         }
     }
-    let event_metadata = event.metadata();
-    if filter.is_enabled(event, event_metadata.level()) {
-        append_line(&mut stack_trace, event_metadata);
-    }
+
+    append_line(&mut stack_trace, event_metadata);
     if !stack_trace.is_empty() {
         stack_trace.truncate(stack_trace.len() - 1);
     }
-    stack_trace
+
+    Some(stack_trace)
 }
 
 const RESERVED_NAMES: [&str; 8] = [
@@ -239,8 +244,10 @@ where
             s.serialize_entry("level_value", &level_value(event_level))?;
         }
 
-        if let Some(filter) = self.display_stack_trace {
-            s.serialize_entry("stack_trace", &format_stack_trace(event, &ctx, filter))?;
+        if let Some((event_filter, span_filter)) = self.display_stack_trace {
+            if let Some(stack_trace) = format_stack_trace(event, &ctx, event_filter, span_filter) {
+                s.serialize_entry("stack_trace", &stack_trace)?;
+            }
         }
 
         if let Some(filter) = self.display_span_list {
