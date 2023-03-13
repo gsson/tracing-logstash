@@ -29,7 +29,7 @@ impl TryForEachField for DefaultSpanRecorder {
         mut f: F,
     ) -> Result<(), E> {
         for (name, value) in self.config.span_field_names.iter().zip(self.fields.iter()) {
-            f(*name, value)?;
+            f(name, value)?;
         }
         Ok(())
     }

@@ -18,7 +18,7 @@ impl TryForEachField for DefaultEventRecorder {
         mut f: F,
     ) -> Result<(), E> {
         for (name, value) in self.config.event_field_names.iter().zip(self.fields.iter()) {
-            f(*name, value)?;
+            f(name, value)?;
         }
         Ok(())
     }
