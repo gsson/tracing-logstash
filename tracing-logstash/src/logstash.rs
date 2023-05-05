@@ -169,17 +169,6 @@ where
     Some(stack_trace)
 }
 
-const RESERVED_NAMES: [&str; 8] = [
-    "@version",
-    "@timestamp",
-    "thread_name",
-    "logger_name",
-    "level",
-    "level_value",
-    "stack_trace",
-    "spans",
-];
-
 struct SerializeSpanName<'c, SS>(&'c Event<'c>, &'c Context<'c, SS>);
 
 impl<'c, SS> Serialize for SerializeSpanName<'c, SS> where SS: Subscriber + for<'a> LookupSpan<'a> {
@@ -214,56 +203,57 @@ where
         let event_level = event_metadata.level();
 
         let mut s = serializer.serialize_map(None)?;
-        if self.display_version {
-            s.serialize_entry("@version", "1")?;
-        }
 
-        if self.display_timestamp {
-            s.serialize_entry("@timestamp", &LogTimestamp::default())?;
-        }
-
-        if self.display_thread_name {
-            let thread = std::thread::current();
-            if let Some(name) = thread.name() {
-                s.serialize_entry("thread_name", name)?;
-            }
-        }
-
-        if let Some(l) = self.display_logger_name {
-            match l {
-                LoggerName::Event => s.serialize_entry("logger_name", event_metadata.target())?,
-                LoggerName::Span => s.serialize_entry("logger_name", &SerializeSpanName(event, &ctx))?
-            };
-        }
-
-        if self.display_level {
-            s.serialize_entry("level", event_level.as_str())?;
-        }
-
-        if self.display_level_value {
-            s.serialize_entry("level_value", &level_value(event_level))?;
-        }
-
-        if let Some((event_filter, span_filter)) = self.display_stack_trace {
-            if let Some(stack_trace) = format_stack_trace(event, &ctx, event_filter, span_filter) {
-                s.serialize_entry("stack_trace", &stack_trace)?;
-            }
-        }
-
-        if let Some(filter) = self.display_span_list {
-            s.serialize_entry(
-                "spans",
-                &SerializableSpanList(&self.span_format, event, &ctx, filter),
-            )?;
-        }
-
-        let mut seen = HashSet::from(RESERVED_NAMES);
+        let mut seen = HashSet::new();
 
         let mut field_visitor = SerializingFieldVisitor {
             serializer: &mut s,
             field_name_filter: |name| seen.insert(name),
             status: None,
         };
+
+        if self.display_version {
+            field_visitor.serialize_field("@version", "1");
+        }
+
+        if self.display_timestamp {
+            field_visitor.serialize_field("@timestamp", &LogTimestamp::default());
+        }
+
+        if self.display_thread_name {
+            let thread = std::thread::current();
+            if let Some(name) = thread.name() {
+                field_visitor.serialize_field("thread_name", name);
+            }
+        }
+
+        if let Some(l) = self.display_logger_name {
+            match l {
+                LoggerName::Event => field_visitor.serialize_field("logger_name", event_metadata.target()),
+                LoggerName::Span => field_visitor.serialize_field("logger_name", &SerializeSpanName(event, &ctx)),
+            };
+        }
+
+        if self.display_level {
+            field_visitor.serialize_field("level", event_level.as_str());
+        }
+
+        if self.display_level_value {
+            field_visitor.serialize_field("level_value", &level_value(event_level));
+        }
+
+        if let Some((event_filter, span_filter)) = self.display_stack_trace {
+            if let Some(stack_trace) = format_stack_trace(event, &ctx, event_filter, span_filter) {
+                field_visitor.serialize_field("stack_trace", &stack_trace);
+            }
+        }
+
+        if let Some(filter) = self.display_span_list {
+            field_visitor.serialize_field(
+                "spans",
+                &SerializableSpanList(&self.span_format, event, &ctx, filter),
+            );
+        }
 
         event.record(&mut field_visitor);
         if let Some(e) = field_visitor.status {
@@ -290,9 +280,14 @@ struct SerializingFieldVisitor<'a, F, S, E> {
 impl<'a, S: SerializeMap, F: FnMut(&'static str) -> bool>
     SerializingFieldVisitor<'a, F, S, S::Error>
 {
+    #[inline]
     fn record_field<V: ?Sized + Serialize>(&mut self, field: &Field, value: &V) {
-        if self.status.is_none() && (self.field_name_filter)(field.name()) {
-            if let Err(e) = self.serializer.serialize_entry(field.name(), &value) {
+        self.serialize_field(field.name(), value)
+    }
+
+    fn serialize_field<V: ?Sized + Serialize>(&mut self, field: &'static str, value: &V) {
+        if self.status.is_none() && (self.field_name_filter)(field) {
+            if let Err(e) = self.serializer.serialize_entry(field, &value) {
                 self.status = Some(e)
             }
         }
