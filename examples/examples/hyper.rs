@@ -3,10 +3,10 @@ use hyper::{Body, Request, Response, Server};
 use log::info as log_info;
 use std::convert::Infallible;
 use std::net::SocketAddr;
-use tracing::{debug, error, info, span, warn};
 use tracing::instrument;
-use tracing_subscriber::EnvFilter;
+use tracing::{debug, error, info, span, warn};
 use tracing_subscriber::prelude::*;
+use tracing_subscriber::EnvFilter;
 use tracing_subscriber::Registry;
 
 #[instrument]
@@ -30,12 +30,9 @@ async fn main() {
         .or_else(|_| EnvFilter::try_new("info"))
         .unwrap();
 
-    let collector = Registry::default()
-        .with(logger)
-        .with(env_filter);
+    let collector = Registry::default().with(logger).with(env_filter);
 
-    tracing::subscriber::set_global_default(collector)
-        .unwrap();
+    tracing::subscriber::set_global_default(collector).unwrap();
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 

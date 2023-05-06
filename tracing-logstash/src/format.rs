@@ -1,4 +1,5 @@
 use crate::fields::TryForEachField;
+use crate::span_recorder::{DefaultSpanRecorder, SpanRecorder};
 use crate::DisplayLevelFilter;
 use serde::ser::{SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
@@ -6,7 +7,6 @@ use std::collections::HashSet;
 use tracing_core::{Event, Subscriber};
 use tracing_subscriber::layer::Context;
 use tracing_subscriber::registry::{LookupSpan, SpanRef};
-use crate::span_recorder::{DefaultSpanRecorder, SpanRecorder};
 
 pub trait FormatSpan {
     fn format_span<S, Span>(&self, serializer: S, span: &SpanRef<Span>) -> Result<S::Ok, S::Error>

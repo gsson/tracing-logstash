@@ -1,7 +1,7 @@
-use std::sync::Arc;
-use tracing_core::Event;
-use tracing_core::field::Field;
 use crate::fields::{FieldConfig, FieldRecorder, FieldVisitor, RecordedValue, TryForEachField};
+use std::sync::Arc;
+use tracing_core::field::Field;
+use tracing_core::Event;
 
 pub trait EventRecorder {
     fn record_event(&mut self, event: &Event<'_>);

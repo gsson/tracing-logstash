@@ -1,14 +1,14 @@
-mod fields;
 mod event_recorder;
-mod span_recorder;
+mod fields;
 pub mod format;
 pub mod logstash;
+mod span_recorder;
 
-use span_recorder::SpanRecorder;
 use crate::logstash::LogstashFormat;
+use span_recorder::SpanRecorder;
 use std::io::Write;
 use std::marker::PhantomData;
-use tracing_core::span::{Attributes, Record, Id};
+use tracing_core::span::{Attributes, Id, Record};
 use tracing_core::{Event, Level, Subscriber};
 use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::layer::Context;
@@ -112,11 +112,10 @@ where
     }
 }
 
-
 #[derive(Copy, Clone)]
 pub enum LoggerName {
     Event,
-    Span
+    Span,
 }
 
 #[derive(Copy, Clone)]

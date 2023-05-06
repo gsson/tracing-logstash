@@ -1,9 +1,8 @@
-use crate::fields::{
-    FieldConfig, FieldSpec,
-};
+use crate::fields::{FieldConfig, FieldSpec};
 use crate::format::{
-    DefaultSpanFormat, FormatEvent, FormatSpan, SerializableSpanList, write_extension_fields,
+    write_extension_fields, DefaultSpanFormat, FormatEvent, FormatSpan, SerializableSpanList,
 };
+use crate::span_recorder::DefaultSpanRecorder;
 use crate::{DisplayLevelFilter, LoggerName};
 use serde::ser::{Error, SerializeMap};
 use serde::{Serialize, Serializer};
@@ -14,7 +13,6 @@ use tracing_core::field::{Field, Visit};
 use tracing_core::{Event, Level, Metadata, Subscriber};
 use tracing_subscriber::layer::Context;
 use tracing_subscriber::registry::LookupSpan;
-use crate::span_recorder::DefaultSpanRecorder;
 
 pub struct LogstashFormat<SF = DefaultSpanFormat> {
     display_version: bool,
@@ -82,7 +80,10 @@ impl<SF> LogstashFormat<SF> {
             ..self
         }
     }
-    pub fn with_stack_trace(self, display_stack_trace: Option<(DisplayLevelFilter, DisplayLevelFilter)>) -> Self {
+    pub fn with_stack_trace(
+        self,
+        display_stack_trace: Option<(DisplayLevelFilter, DisplayLevelFilter)>,
+    ) -> Self {
         Self {
             display_stack_trace,
             ..self
@@ -148,7 +149,7 @@ where
     }
     let event_metadata = event.metadata();
     if !event_filter.is_enabled(event, event_metadata.level()) {
-        return None
+        return None;
     }
 
     let mut stack_trace = String::new();
@@ -171,13 +172,18 @@ where
 
 struct SerializeSpanName<'c, SS>(&'c Event<'c>, &'c Context<'c, SS>);
 
-impl<'c, SS> Serialize for SerializeSpanName<'c, SS> where SS: Subscriber + for<'a> LookupSpan<'a> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+impl<'c, SS> Serialize for SerializeSpanName<'c, SS>
+where
+    SS: Subscriber + for<'a> LookupSpan<'a>,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         if let Some(span_metadata) = self.1.current_span().metadata() {
             let name = format!("{}::{}", span_metadata.target(), span_metadata.name());
             serializer.serialize_str(&name)
-        }
-        else {
+        } else {
             serializer.serialize_str(self.0.metadata().target())
         }
     }
@@ -229,8 +235,12 @@ where
 
         if let Some(l) = self.display_logger_name {
             match l {
-                LoggerName::Event => field_visitor.serialize_field("logger_name", event_metadata.target()),
-                LoggerName::Span => field_visitor.serialize_field("logger_name", &SerializeSpanName(event, &ctx)),
+                LoggerName::Event => {
+                    field_visitor.serialize_field("logger_name", event_metadata.target())
+                }
+                LoggerName::Span => {
+                    field_visitor.serialize_field("logger_name", &SerializeSpanName(event, &ctx))
+                }
             };
         }
 

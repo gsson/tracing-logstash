@@ -1,7 +1,7 @@
+use crate::fields::{FieldConfig, FieldRecorder, FieldVisitor, RecordedValue, TryForEachField};
+use std::sync::Arc;
 use tracing_core::field::Field;
 use tracing_core::span::{Attributes, Record};
-use std::sync::Arc;
-use crate::fields::{FieldConfig, FieldRecorder, FieldVisitor, RecordedValue, TryForEachField};
 
 pub trait SpanRecorder {
     fn record_span(&mut self, attrs: &Attributes<'_>);
