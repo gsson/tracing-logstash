@@ -30,6 +30,7 @@ impl EventRecorder for DefaultEventRecorder {
     }
 }
 
+#[allow(dead_code)]
 impl DefaultEventRecorder {
     pub fn from_config(config: Arc<FieldConfig>) -> Self {
         let n = config.event_field_index.len();
