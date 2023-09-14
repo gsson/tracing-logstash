@@ -24,13 +24,12 @@ async fn shutdown_signal() {
 
 #[tokio::main]
 async fn main() {
-    let logger = tracing_logstash::Layer::default()
-        .event_format(tracing_logstash::logstash::LogstashFormat::default()
-            .with_constants(vec![
-                ("service.name", "tracing-logstash".to_owned()),
-                ("service.environment", "development".to_owned()),
-            ])
-        );
+    let logger = tracing_logstash::Layer::default().event_format(
+        tracing_logstash::logstash::LogstashFormat::default().with_constants(vec![
+            ("service.name", "tracing-logstash".to_owned()),
+            ("service.environment", "development".to_owned()),
+        ]),
+    );
 
     let env_filter = EnvFilter::try_from_default_env()
         .or_else(|_| EnvFilter::try_new("info"))
