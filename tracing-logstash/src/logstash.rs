@@ -25,6 +25,7 @@ pub struct LogstashFormat<SF = DefaultSpanFormat> {
     display_stack_trace: Option<(DisplayLevelFilter, DisplayLevelFilter)>,
     span_format: SF,
     span_fields: Arc<FieldConfig>,
+    constants: Vec<(&'static str, String)>,
 }
 
 const fn level_value(level: &Level) -> u64 {
@@ -89,12 +90,18 @@ impl<SF> LogstashFormat<SF> {
             ..self
         }
     }
+
     pub fn with_span_fields(self, span_fields: Vec<FieldSpec>) -> Self {
         Self {
             span_fields: Arc::new(FieldConfig::new(span_fields)),
             ..self
         }
     }
+
+    pub fn with_constants(self, constants: Vec<(&'static str, String)>) -> Self {
+        Self { constants, ..self }
+    }
+
     pub fn span_format<FS2>(self, span_format: FS2) -> LogstashFormat<FS2> {
         LogstashFormat {
             display_version: self.display_version,
@@ -107,6 +114,7 @@ impl<SF> LogstashFormat<SF> {
             display_span_list: self.display_span_list,
             span_format,
             span_fields: self.span_fields,
+            constants: self.constants,
         }
     }
 }
@@ -124,6 +132,7 @@ impl Default for LogstashFormat {
             display_span_list: None,
             span_format: Default::default(),
             span_fields: Default::default(),
+            constants: Default::default(),
         }
     }
 }
@@ -256,6 +265,10 @@ where
             if let Some(stack_trace) = format_stack_trace(event, &ctx, event_filter, span_filter) {
                 field_visitor.serialize_field("stack_trace", &stack_trace);
             }
+        }
+
+        for (key, value) in &self.constants {
+            field_visitor.serialize_field(key, value);
         }
 
         if let Some(filter) = self.display_span_list {
