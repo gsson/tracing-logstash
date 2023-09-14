@@ -1,5 +1,7 @@
 name: ci
 
+# inspired by https://github.com/tokio-rs/tracing/blob/master/.github/workflows/CI.yml
+
 on:
   push:
     branches:
@@ -48,3 +50,12 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         args: --all --examples --tests --benches -- -D warnings
+
+  test:
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Test
+        run: cargo test --verbose
