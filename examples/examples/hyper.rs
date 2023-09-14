@@ -39,7 +39,7 @@ async fn main() {
 
     tracing::subscriber::set_global_default(collector).unwrap();
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
     let make_svc = make_service_fn(|_conn| async {
         // service_fn converts our function into a `Service`
