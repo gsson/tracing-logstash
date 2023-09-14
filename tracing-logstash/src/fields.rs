@@ -2,11 +2,13 @@ use serde::{Serialize, Serializer};
 use std::collections::HashMap;
 use tracing_core::field::{Field, Visit};
 
+#[allow(dead_code)]
 enum FieldSourceFilter {
     SpanOrEvent,
     Event,
 }
 
+#[allow(dead_code)]
 enum FieldSource {
     Copy(FieldSourceFilter, &'static str),
     Translate(
@@ -159,6 +161,7 @@ impl<'a, R: FieldRecorder> Visit for FieldVisitor<'a, R> {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub enum RecordedValue {
     Unset,

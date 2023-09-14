@@ -4,7 +4,7 @@ use log::info as log_info;
 use std::convert::Infallible;
 use std::net::SocketAddr;
 use tracing::instrument;
-use tracing::{debug, error, info, span, warn};
+use tracing::info;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::Registry;
