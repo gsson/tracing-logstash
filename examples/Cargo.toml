@@ -1,6 +1,6 @@
 [package]
 name = "logstash-tracing-examples"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Henrik Gustafsson <gsson@fnord.se>"]
 license = "MIT"
 edition = "2021"
