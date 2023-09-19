@@ -10,6 +10,10 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.6.1] - 2023-09-19
+
+- Add permissions to release
+
 ## [0.6.0] - 2023-09-19
 
 - Add dependabot configuration
