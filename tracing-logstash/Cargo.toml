@@ -15,3 +15,11 @@ tracing-subscriber = { version = "0", default-features = false, features = [ "fm
 serde = "1"
 serde_json = "1"
 time = { version = "0.3", default-features = false, features = [ "std", "formatting" ] }
+
+[dev-dependencies]
+tracing = { version = "0" }
+time = { version = "0.3", features = [ "macros", "parsing" ] }
+
+[features]
+default = []
+std = ["tracing-subscriber/std", "tracing-core/std"]

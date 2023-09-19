@@ -14,6 +14,19 @@ use tracing_core::{Event, Level, Metadata, Subscriber};
 use tracing_subscriber::layer::Context;
 use tracing_subscriber::registry::LookupSpan;
 
+/// Display options for the logstash output format
+/// 
+/// # Example
+/// ```
+/// # use tracing_subscriber::prelude::*;
+/// #
+/// let logger = tracing_logstash::Layer::default().event_format(
+///    tracing_logstash::logstash::LogstashFormat::default()
+///         .with_timestamp(false),
+/// );
+/// #
+/// # let collector = tracing_subscriber::Registry::default().with(logger);
+/// ```
 pub struct LogstashFormat<SF = DefaultSpanFormat> {
     display_version: bool,
     display_timestamp: bool,
@@ -28,6 +41,7 @@ pub struct LogstashFormat<SF = DefaultSpanFormat> {
     constants: Vec<(&'static str, String)>,
 }
 
+/// Converts a `Level` to a numeric value.
 const fn level_value(level: &Level) -> u64 {
     match *level {
         Level::ERROR => 3,
@@ -98,6 +112,20 @@ impl<SF> LogstashFormat<SF> {
         }
     }
 
+    /// Add a constant field to every event.
+    ///
+    /// # Example
+    /// ```
+    /// # use tracing_subscriber::prelude::*;
+    /// #
+    /// let logger = tracing_logstash::Layer::default().event_format(
+    ///     tracing_logstash::logstash::LogstashFormat::default().with_constants(vec![
+    ///         ("service.name", "tracing-logstash".to_owned()),
+    ///     ]),
+    /// );
+    /// #
+    /// # let collector = tracing_subscriber::Registry::default().with(logger);
+    /// ```
     pub fn with_constants(self, constants: Vec<(&'static str, String)>) -> Self {
         Self { constants, ..self }
     }
@@ -156,6 +184,7 @@ where
         )
         .unwrap();
     }
+
     let event_metadata = event.metadata();
     if !event_filter.is_enabled(event, event_metadata.level()) {
         return None;
@@ -369,5 +398,17 @@ impl Serialize for LogTimestamp {
             Ok(s) => serializer.serialize_str(&s),
             Err(e) => Err(S::Error::custom(e)),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use time::macros::datetime;
+
+    #[test]
+    fn test_serialize_log_timestamp() {
+        let timestamp = super::LogTimestamp(datetime!(2020-01-01 00:00:00 +00:00));
+        let serialized = serde_json::to_string(&timestamp).unwrap();
+        assert_eq!(serialized, "\"2020-01-01T00:00:00Z\"");
     }
 }
