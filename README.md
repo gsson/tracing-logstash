@@ -10,7 +10,7 @@ You can include this library in your Cargo.toml file:
 
 ```toml
 [dependencies]
-tracing-logstash = "0.5.0"
+tracing-logstash = "0.6.1"
 ```
 
 ## Usage
