@@ -15,7 +15,7 @@ use tracing_subscriber::layer::Context;
 use tracing_subscriber::registry::LookupSpan;
 
 /// Display options for the logstash output format
-/// 
+///
 /// # Example
 /// ```
 /// # use tracing_subscriber::prelude::*;
