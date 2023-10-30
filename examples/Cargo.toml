@@ -13,5 +13,5 @@ tracing = "0.1"
 tracing-logstash = { path = "../tracing-logstash" }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter"] }
 
-tracing-log = { version = "0.1", features = ["log-tracer"] }
+tracing-log = { version = "0.2", features = ["log-tracer"] }
 log = "0.4"
