@@ -10,6 +10,11 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.6.4] - 2023-11-15
+
+- Add RELEASING.md with release instructions
+- Update version in Cargo.toml
+
 ## [0.6.3] - 2023-11-15
 
 - Update the changelog so the release actually happens
