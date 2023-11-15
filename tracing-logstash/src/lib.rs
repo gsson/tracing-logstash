@@ -14,7 +14,7 @@ use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::layer::Context;
 use tracing_subscriber::registry::LookupSpan;
 
-pub struct Layer<S, E = LogstashFormat, W = fn() -> std::io::Stdout> {
+pub struct Layer<S, E = LogstashFormat, W = fn() -> std::io::StdoutLock<'static>> {
     record_separator: Vec<u8>,
     make_writer: W,
     event_format: E,
@@ -25,7 +25,7 @@ impl<S> Default for Layer<S> {
     fn default() -> Self {
         Self {
             record_separator: vec![b'\n'],
-            make_writer: std::io::stdout,
+            make_writer: || std::io::stdout().lock(),
             event_format: Default::default(),
             _inner: Default::default(),
         }
