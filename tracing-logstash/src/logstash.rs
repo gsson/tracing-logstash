@@ -39,6 +39,7 @@ pub struct LogstashFormat<SF = DefaultSpanFormat> {
     span_format: SF,
     span_fields: Arc<FieldConfig>,
     constants: Vec<(&'static str, String)>,
+    dynamics: fn() -> Vec<(&'static str, String)>,
 }
 
 /// Converts a `Level` to a numeric value.
@@ -130,6 +131,26 @@ impl<SF> LogstashFormat<SF> {
         Self { constants, ..self }
     }
 
+    /// Add a dynamic field to every event.
+    ///
+    /// # Example
+    /// ```
+    /// # use tracing_subscriber::prelude::*;
+    /// # use time::*;
+    /// #
+    /// let logger = tracing_logstash::Layer::default().event_format(
+    ///     tracing_logstash::logstash::LogstashFormat::default().with_dynamics(||
+    ///     vec![
+    ///         ("time_format_rfc2822", OffsetDateTime::now_utc().format(&format_description::well_known::Rfc2822).unwrap_or_default()),
+    ///     ]),
+    /// );
+    /// #
+    /// # let collector = tracing_subscriber::Registry::default().with(logger);
+    /// ```
+    pub fn with_dynamics(self, dynamics: fn() -> Vec<(&'static str, String)>) -> Self {
+        Self { dynamics, ..self }
+    }
+
     pub fn span_format<FS2>(self, span_format: FS2) -> LogstashFormat<FS2> {
         LogstashFormat {
             display_version: self.display_version,
@@ -143,6 +164,7 @@ impl<SF> LogstashFormat<SF> {
             span_format,
             span_fields: self.span_fields,
             constants: self.constants,
+            dynamics: self.dynamics,
         }
     }
 }
@@ -161,6 +183,7 @@ impl Default for LogstashFormat {
             span_format: Default::default(),
             span_fields: Default::default(),
             constants: Default::default(),
+            dynamics: Vec::new,
         }
     }
 }
@@ -297,6 +320,10 @@ where
         }
 
         for (key, value) in &self.constants {
+            field_visitor.serialize_field(key, value);
+        }
+
+        for (key, value) in &(self.dynamics)() {
             field_visitor.serialize_field(key, value);
         }
 
