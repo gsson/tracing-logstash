@@ -10,6 +10,10 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.7.0] - 2024-01-08
+
+- Add support for generated fields by @gsson (thanks @killzoner) in https://github.com/gsson/tracing-logstash/pull/14
+
 ## [0.6.4] - 2023-11-15
 
 - Add RELEASING.md with release instructions
